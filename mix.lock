@@ -1,0 +1,4 @@
+%{
+  "nimble_options": {:hex, :nimble_options, "1.1.0", "3b31a57ede9cb1502071fade751ab0c7b8dbe75a9a4c2b5bbb0943a690b63172", [:mix], [], "hexpm", "8bbbb3941af3ca9acc7835f5655ea062111c9c27bcac53e004460dfd19008a99"},
+  "pairing_heap": {:hex, :pairing_heap, "0.2.0", "be46e8f2240348739d4bb507c70c8e4080ea7de1b14411563a85e6c1733a1884", [:mix], [], "hexpm", "5895ec0fee02674e15db95b447528c7fa33c925db4f6d3e9757550f12243ccae"},
+}
