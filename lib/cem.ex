@@ -1,12 +1,14 @@
 defmodule CEM do
   @moduledoc """
+  ## Todo
+  - Introduce a random seed as an optional param so that runs are reproducible.
+
   ## Notes
   - Should CEM provide a function for extracting the final best solution from the
     params?
     - e.g., the float mean for normal params (or list of means)
     - e.g., a list of thresholded binary values for a binary instance?
     - this is where instance type would play a role
-  - Introduce a random seed as an optional param so that runs are reproducible.
   - Somehow allow configurable smoothing.
     - Not sure how to do dynamic smoothing in general.
   - When using an ensemble of CEM searchers, what about using a score-weighted
@@ -25,6 +27,7 @@ defmodule CEM do
   """
 
   alias CEM.Options
+  alias CEM.RankHeap
 
   @type opts :: keyword
   @type params :: any
@@ -77,7 +80,8 @@ defmodule CEM do
       generate_fn: generate_fn,
       update_fn: update_fn,
       terminate_fn: terminate_fn,
-      default_terminate_fn: default_terminate_fn
+      default_terminate_fn: default_terminate_fn,
+      params_to_instance_fn: &problem_module.params_to_instance/1
     }
 
     loop(loop_fns, params_init, [])
@@ -89,26 +93,57 @@ defmodule CEM do
     trace = update_trace(trace, params_elite, score_elite)
 
     if loop_fns.terminate_fn.(trace) or loop_fns.default_terminate_fn.(trace) do
-      %{params: params_elite, score: score_elite, trace: trace}
+      %{
+        solution: loop_fns.params_to_instance_fn.(params),
+        params: params_elite,
+        score: score_elite,
+        trace: trace
+      }
     else
       loop(loop_fns, params_elite, trace)
     end
   end
 
   defp generate_elite_sample_and_score(params, draw_instance_fn, score_instance_fn, opts) do
-    order = mode_to_order(opts.mode)
+    rank_heap =
+      stream_to_rank(
+        init_rank_heap(opts.mode, opts.n_elite),
+        fn ->
+          inst = draw_instance_fn.(params)
+          {inst, score_instance_fn.(inst)}
+        end,
+        opts.n_sample
+      )
 
-    {sample, scores} =
-      1..opts.n_sample
-      |> Enum.map(fn _ ->
-        inst = draw_instance_fn.(params)
-        {inst, score_instance_fn.(inst)}
-      end)
-      |> Enum.sort_by(fn {_, s} -> s end, order)
-      |> take_reverse(opts.n_elite)
-      |> Enum.unzip()
+    sample = RankHeap.values(rank_heap)
+    score = RankHeap.root_key(rank_heap)
 
-    {sample, hd(scores)}
+    {sample, score}
+  end
+
+  defp init_rank_heap(mode, size) do
+    mode
+    |> case do
+      :min -> :low
+      :max -> :high
+    end
+    |> RankHeap.new(size)
+  end
+
+  # https://elixirforum.com/t/why-is-stream-reduce-while-missing/34422/4
+  # Test memory load for an expensive draw/score
+  # replace scan, take, to_list with a Enum.reduce and test (memory and time)
+  @spec stream_to_rank(RankHeap.t(), (-> {instance, score}), pos_integer) :: RankHeap.t()
+  defp stream_to_rank(rank_heap, draw_and_score_fn, n_sample) do
+    Stream.repeatedly(fn -> draw_and_score_fn end)
+    |> Stream.take(n_sample)
+    |> Task.async_stream(& &1.(), ordered: false)
+    |> Stream.scan(rank_heap, fn {:ok, {inst, score}}, rh ->
+      RankHeap.update(rh, score, inst)
+    end)
+    |> Stream.take(-1)
+    |> Enum.to_list()
+    |> hd()
   end
 
   defp update_and_smooth_params(params, sample, update_params_fn, smooth_params_fn, opts) do
@@ -126,14 +161,4 @@ defmodule CEM do
 
     [%{step: step, params: params, score: score} | trace]
   end
-
-  defp mode_to_order(:min), do: :asc
-  defp mode_to_order(:max), do: :desc
-
-  # Like Enum.take, except the order of the elements is reversed, making it
-  # efficient to get what would be the last item of Enum.take
-  defp take_reverse(l, n), do: take_reverse(l, n, [])
-  defp take_reverse(_l, 0, acc), do: acc
-  defp take_reverse([], _n, acc), do: acc
-  defp take_reverse([h | t], n, acc), do: take_reverse(t, n - 1, [h | acc])
 end

@@ -44,6 +44,11 @@ defmodule CEM.Examples.DoubleGaussian do
     std < 0.001
   end
 
+  @impl true
+  def params_to_instance(%{mean: mean}) do
+    mean
+  end
+
   defp sample_mean_and_std(sample) do
     n = length(sample)
     mean = Enum.sum(sample) / n

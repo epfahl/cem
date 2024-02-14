@@ -42,6 +42,12 @@ defmodule CEM.Problem do
   """
   @callback terminate?(trace, opts) :: boolean
 
+  @doc """
+  Given final parameters of the instance-generating probability distribution,
+  return the corresponding most likely solution instance.
+  """
+  @callback params_to_instance(params) :: instance
+
   defmacro __using__(_opts) do
     quote location: :keep do
       @behaviour CEM.Problem
