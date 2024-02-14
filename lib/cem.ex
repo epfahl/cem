@@ -1,29 +1,10 @@
 defmodule CEM do
   @moduledoc """
-  ## Todo
-  - Introduce a random seed as an optional param so that runs are reproducible.
 
   ## Notes
-  - Should CEM provide a function for extracting the final best solution from the
-    params?
-    - e.g., the float mean for normal params (or list of means)
-    - e.g., a list of thresholded binary values for a binary instance?
-    - this is where instance type would play a role
-  - Somehow allow configurable smoothing.
-    - Not sure how to do dynamic smoothing in general.
-  - When using an ensemble of CEM searchers, what about using a score-weighted
-    linear combination?
-    - Kind of a generalization of smoothing.
-    - Might inhibit premature exploitation in a way that is stronger than
-      current-prev smoothing between search steps.
-  - The RH means that only the elite sample is stored, but a down side
-    is that the scoring can't be parallelized without putting the RH into a
-    process.
-    - Well, it can be parallelized, but then the whole sample must be in memory, which
-      purpose of the RH.
-  - Introduce concurrency into CEM
-    - Batch size for a single sample (default to n_sample)
-    - Number of parallel CEM instances (default to 1)
+  - Consider how smoothing might be made configurable.
+    - An optional callback for computing the smoothing parameters
+      adaptively/dynamically?
   """
 
   alias CEM.Options

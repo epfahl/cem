@@ -12,6 +12,7 @@ defmodule CEM.Examples.DoubleGaussian do
     - Less obvious for continuou, unless a bouning region is defined or can be
       discovered.
     - Same goes for sample size.
+  - Implement numerically stable online updates of mean and std (see wiki)
   """
   use CEM.Problem
 
