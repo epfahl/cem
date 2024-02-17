@@ -1,18 +1,5 @@
 defmodule CEM.Examples.DoubleGaussian do
   @moduledoc """
-  ## Notes
-  - This could apply to any 1D function, supplied by the user as the score.
-    - And it could probably be generalized to any continuous n-D function.
-    - Unconstrained n-d optimization.
-    - Assume normal distr over n-d vector.
-    - In general, would make good use of Nx.
-  - How would we automatically determine a prior from the problem description?
-    - In general, this is problem-specific.
-    - Easy for probability params (bernoulli or transition matrix).
-    - Less obvious for continuou, unless a bouning region is defined or can be
-      discovered.
-    - Same goes for sample size.
-  - Implement numerically stable online updates of mean and std (see wiki)
   """
   use CEM.Problem
 
@@ -41,8 +28,8 @@ defmodule CEM.Examples.DoubleGaussian do
   end
 
   @impl true
-  def terminate?([%{params: %{std: std}} | _], _opts) do
-    std < 0.001
+  def terminate?([entry | _], _opts) do
+    entry.params.std < 0.0001
   end
 
   @impl true

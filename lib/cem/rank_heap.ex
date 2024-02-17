@@ -57,7 +57,7 @@ defmodule CEM.RankHeap do
   @spec root_key(t) :: {:ok, key} | :error
   def root_key(%RankHeap{heap: heap}) do
     with {:ok, {root_key, _value}} <- PairingHeap.peek(heap) do
-      root_key
+      {:ok, root_key}
     end
   end
 
