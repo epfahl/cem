@@ -1,8 +1,16 @@
 defmodule CEM do
   @moduledoc """
-  """
+  An Elixir framework for applying the cross-entropy method to continuous and
+  discrete optimization problems.
 
-  use CEM.Types
+  Define a problem module according to the docs in `CEM.Problem`, and then
+  execute CEM optimization using `CEM.search/2`. For example, if the problem
+  module is `MyProblem`, then the search is executed as
+
+      CEM.search(MyProblem, opts)
+
+  where `opts` is a keyword list of options.
+  """
 
   alias CEM.Log
   alias CEM.Options
@@ -12,18 +20,24 @@ defmodule CEM do
   defstruct [:step, :params, :score, :solution, :log]
 
   @type t :: %__MODULE__{
-          step: step(),
-          params: params(),
-          score: score(),
-          solution: instance(),
+          step: pos_integer(),
+          params: any(),
+          score: float(),
+          solution: any(),
           log: Log.t()
         }
 
   @doc """
-  Search for the optimal instance.
+  Search for the optimal solution instance.
 
-  Execute the CEM optimization algorithm for the given problem module and
-  optional parameters.
+  Given a problem module and optional parameters, execute CEM optimization
+  and return the optimal solution instance and its score, corresponding
+  parameters of the probabiity distribution, and a log of optimization
+  progress.
+
+  ## Options
+
+  #{NimbleOptions.docs(CEM.Options.schema())}
   """
   @spec search(problem_module :: module(), opts :: keyword()) :: map()
   def search(problem_module, opts \\ []) do
@@ -66,7 +80,7 @@ defmodule CEM do
     loop(loop_fns, params_init, 1, Log.new())
   end
 
-  @spec loop(map(), params(), step(), Log.t()) :: t
+  @spec loop(map(), any(), pos_integer(), Log.t()) :: t
   defp loop(loop_fns, params, step, log) do
     {sample_elite, score_elite} = loop_fns.generate_fn.(params)
     params_elite = loop_fns.update_fn.(params, sample_elite)

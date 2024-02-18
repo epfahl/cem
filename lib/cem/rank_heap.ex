@@ -1,4 +1,9 @@
 defmodule CEM.RankHeap do
+  @moduledoc """
+  Adaptation of a pairing heap to efficiently maintain a fixed number of
+  key-value pairs with the highest or lowest keys in a stream.
+  """
+
   alias __MODULE__
 
   defstruct [:heap, :size, :mode, :max_size, :swap?]
@@ -15,6 +20,9 @@ defmodule CEM.RankHeap do
           swap?: (number, number -> boolean)
         }
 
+  @doc """
+  Create a new rank heap.
+  """
   @spec new(mode :: mode, max_size :: non_neg_integer()) :: t
   def new(mode, max_size) when max_size > 0 do
     %RankHeap{
@@ -26,6 +34,9 @@ defmodule CEM.RankHeap do
     }
   end
 
+  @doc """
+  Update the rank heap with a new key-value pair.
+  """
   @spec update(t, key, value) :: t
   def update(%RankHeap{heap: heap, size: size, max_size: max_size} = rank_heap, key, value)
       when size < max_size do
@@ -46,6 +57,9 @@ defmodule CEM.RankHeap do
     %{rank_heap | heap: heap}
   end
 
+  @doc """
+  Return the values in the rank heap.
+  """
   @spec values(t) :: [value]
   def values(%RankHeap{heap: heap}) do
     heap
@@ -54,6 +68,9 @@ defmodule CEM.RankHeap do
     |> elem(1)
   end
 
+  @doc """
+  Return the root key of the rank heap.
+  """
   @spec root_key(t) :: {:ok, key} | :error
   def root_key(%RankHeap{heap: heap}) do
     with {:ok, {root_key, _value}} <- PairingHeap.peek(heap) do

@@ -1,4 +1,79 @@
 defmodule CEM.Problem do
+  @moduledoc """
+  A behaviour module that defines callbacks needed to execute CEM optimization.
+
+  ## Example
+
+      defmodule MyProblem do
+        use CEM.Problem
+
+        @impl true
+        def init_params(_opts), do: %{mean: 0, std: 100}
+
+        @impl true
+        def draw_instance(%{mean: mean, std: std}), do: mean + std * :rand.normal()
+
+        @impl true
+        def score_instance(x), do: :math.exp(-x * x)
+
+        @impl true
+        def update_params(sample) do
+          n = length(sample)
+          mean = sample_mean(sample, n)
+          std = sample_std(sample, n, mean)
+          %{mean: mean, std: std}
+        end
+
+        @impl true
+        def smooth_params(params, params_prev, f_smooth) do
+          %{
+            mean: smooth(params.mean, params_prev.mean, f_smooth),
+            std: smooth(params.std, params_prev.std, f_smooth)
+          }
+        end
+
+        @impl true
+        def terminate?([entry | _], _opts), do: entry.params.std < 0.001
+
+        @impl true
+        def params_to_instance(%{mean: mean}), do: mean
+
+        defp sample_mean(sample, n), do: Enum.sum(sample) / n
+
+        defp sample_std(sample, n, mean) do
+          sample
+          |> Enum.map(&((&1 - mean) * (&1 - mean)))
+          |> Enum.sum()
+          |> Kernel./(n)
+          |> :math.sqrt()
+        end
+
+        defp smooth(x, x_prev, f), do: f * x + (1 - f) * x_prev
+      end
+
+  This module can be used by passing it to `CEM.search/2`. Execute CEM optimization
+  with the default options as follows:
+
+      CEM.search(MyProblem)
+
+  This will return something like
+
+      %CEM{
+        step: 8,
+        params: %{std: 3.215547569473733e-4, mean: 3.9999115132284735},
+        score: 0.9999998819745811,
+        solution: 3.99993602848477,
+        log: [
+          %CEM.Log.Entry{
+            step: 8,
+            params: %{std: 3.215547569473733e-4, mean: 3.9999115132284735},
+            score: 0.9999998819745811
+          },
+          ...
+        ]
+      }
+  """
+
   use CEM.Types
 
   @doc """

@@ -30,7 +30,7 @@ defmodule CEM.MixProject do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.16", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       {:nimble_options, "~> 1.1"},
       {:pairing_heap, "~> 0.2.0"}
     ]
