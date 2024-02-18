@@ -1,4 +1,4 @@
-_Note: This library is still under development._
+_Note: This library is still in its very early phases of development._
 
 `CEM` is an Elixir framework for applying the cross-entropy method to 
 continuous and discrete optimization problems.
