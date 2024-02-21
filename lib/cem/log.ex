@@ -1,30 +1,21 @@
 defmodule CEM.Log do
   @moduledoc """
-
+  Module that defines the log of optimization progress.
   """
 
-  defmodule Entry do
-    defstruct [:step, :params, :score]
+  @type entry :: map()
+  @type t :: [entry()]
 
-    @type t :: %__MODULE__{
-            step: pos_integer(),
-            params: any(),
-            score: float()
-          }
-
-    @spec new(pos_integer(), any(), float()) :: t
-    def new(step, params, score) do
-      %Entry{step: step, params: params, score: score}
-    end
-  end
-
-  @type t :: [Entry.t()]
-
-  @spec new() :: [Entry.t()]
+  @doc """
+  Create a new instance of `Log` as an empty list.
+  """
+  @spec new() :: t
   def new(), do: []
 
-  @spec update(t, pos_integer(), any, float) :: t
-  def update(log, step, params, score) do
-    [Entry.new(step, params, score) | log]
-  end
+  @doc """
+  Update the log by prepending a new entry with the provided step,
+  parameters, and score.
+  """
+  @spec update(t, map()) :: t
+  def update(log, entry), do: [entry | log]
 end

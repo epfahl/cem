@@ -59,7 +59,7 @@ defmodule CEM do
 
   ## Search
 
-  Once the problem is defined, execute the search with
+  Once the problem is defined, execute the search with `CEM.search/2`:
 
       CEM.search(MyProblem, opts)
 
@@ -152,11 +152,13 @@ defmodule CEM do
     loop(problem_module.init_params(opts), 1, Log.new(), loop_fns)
   end
 
+  # The main search loop that refines the parameters of the instance-generating
+  # probability distribution.
   @spec loop(params(), step(), Log.t(), map()) :: map()
   defp loop(params, step, log, loop_fns) do
     {sample_elite, score_elite} = loop_fns.generate_fn.(params)
     params_elite = loop_fns.update_fn.(params, sample_elite)
-    log = Log.update(log, step, params_elite, score_elite)
+    log = Log.update(log, %{step: step, params: params_elite, score: score_elite})
 
     if loop_fns.terminate_fn.(log) do
       step = log |> hd() |> Map.get(:step)
@@ -173,6 +175,7 @@ defmodule CEM do
     end
   end
 
+  # Initialize the functions needed in the search loop
   @spec init_loop_fns(module(), opts()) :: map()
   defp init_loop_fns(problem_module, opts) do
     generate_fn =
@@ -200,7 +203,7 @@ defmodule CEM do
       [] ->
         false
 
-      [%Log.Entry{step: step} | _] = log ->
+      [%{step: step} | _] = log ->
         step >= opts.n_step_max or problem_module.terminate?(log, opts)
     end
 
