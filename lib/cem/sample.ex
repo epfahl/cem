@@ -1,12 +1,18 @@
 defmodule CEM.Sample do
   @moduledoc """
-  Generate a sample of instance-score pairs from the instance-generating
-  probability distribution.
+  Module for generating a sample of instance-score pairs from the
+  instance-generating probability distribution.
   """
 
-  use CEM.Types
-
   alias CEM.RankHeap
+
+  @type opts :: map()
+  @type params :: any()
+  @type instance :: any()
+  @type score :: float()
+  @type step :: non_neg_integer()
+  @type draw_instance_fn :: (params() -> instance())
+  @type score_instance_fn :: (instance() -> score())
 
   @doc """
   Given parameters of the instance-generating probability distribution,
@@ -38,8 +44,6 @@ defmodule CEM.Sample do
   @doc """
   Reduce a stream of instance-score pairs into the elite sample and the score
   associated with that sample.
-
-  Note: The body of this function
   """
   @spec reduce_to_elite_sample_and_score(Enumerable.t(), opts()) :: {[instance()], score()}
   def reduce_to_elite_sample_and_score(sample_stream, opts) do
@@ -48,6 +52,8 @@ defmodule CEM.Sample do
     |> get_sample_and_score_from_rank_heap()
   end
 
+  # Use a `RankHeap` to consume a stream of key-value pairs and hold the pairs
+  # with largest or smallest keys so far.
   @spec reduce_to_rank_heap(Enumerable.t(), opts()) :: RankHeap.t()
   defp reduce_to_rank_heap(sample_stream, opts) do
     sample_stream
