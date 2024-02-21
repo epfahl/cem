@@ -1,5 +1,5 @@
 defmodule CEMTestProblem do
-  use CEM.Problem
+  use CEM
   def init_params(_), do: 1
   def draw_instance(_), do: 1
   def score_instance(_), do: 1
@@ -14,7 +14,7 @@ defmodule CEMTest do
   doctest CEM
 
   test "exercise the full pipeline" do
-    %CEM{step: step, params: params, solution: solution, score: score, log: log} =
+    %{step: step, params: params, solution: solution, score: score, log: log} =
       CEM.search(CEMTestProblem, n_sample: 10, f_elite: 0.3)
 
     assert {step, params, solution, score} == {1, 1, 1, 1}

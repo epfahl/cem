@@ -77,8 +77,8 @@ defmodule CEM.Problem do
   use CEM.Types
 
   @doc """
-  Draw a random instance from the probability distribution with the given
-  parameters.
+  Initialize the parameters of the probability distribution used to generate
+  instances.
   """
   @callback init_params(opts) :: params
 
