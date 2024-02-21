@@ -3,7 +3,11 @@ defmodule CEM.Update do
   Update and smooth parameters of the instance-generating probability distribution.
   """
 
-  use CEM.Types
+  @type opts :: map
+  @type params :: any
+  @type instance :: any
+  @type update_params_fn :: ([instance()] -> params())
+  @type smooth_params_fn :: (params(), params(), float() -> params())
 
   @doc """
   Update the parameters from a sample and then smooth based on the previous parameter values.
@@ -13,7 +17,7 @@ defmodule CEM.Update do
           [instance()],
           update_params_fn(),
           smooth_params_fn(),
-          opts
+          opts()
         ) :: params()
   def update_and_smooth_params(params, sample, update_params_fn, smooth_params_fn, opts) do
     sample
