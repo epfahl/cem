@@ -1,47 +1,44 @@
 defmodule CEM do
   @moduledoc """
-  A behaviour module that defines callbacks needed to execute CEM optimization.
+  The primary interface for defining a CEM optimization problem and executing
+  the search.
+
+  ..._summarize the functional flow of CEM optimization_...
+  ..._a diagram may be helpful_...
 
   ## Define a problem
 
-  The `CEM` behaviour defines a number of callbacks that need to be implemented
-  in order to fully specify a `CEM` problem.
+  A `CEM` problem is a struct that holds seven (7) required functions. In many
+  situations, it will make sense to define some or all of these functions in a
+  module and then create the problem struct using `CEM.new/1`.
 
-  Here is a problem module that implements one-dimensional continuous
-  optimization for a normal probability distribution:
+  For example, here's a module that defines a simple one-dimensional
+  optimization problem:
 
       defmodule MyProblem do
-        use CEM
 
-        @impl true
-        def init_params(_opts), do: %{mean: 0, std: 100}
+        def init(_opts), do: %{mean: 0, std: 100}
 
-        @impl true
-        def draw_instance(%{mean: mean, std: std}), do: mean + std * :rand.normal()
+        def draw(%{mean: mean, std: std}), do: mean + std * :rand.normal()
 
-        @impl true
-        def score_instance(x), do: :math.exp(-x * x)
+        def score(x), do: :math.exp(-x * x)
 
-        @impl true
-        def update_params(sample) do
+        def update(sample) do
           n = length(sample)
           mean = sample_mean(sample, n)
           std = sample_std(sample, n, mean)
           %{mean: mean, std: std}
         end
 
-        @impl true
-        def smooth_params(params, params_prev, f_smooth) do
+        def smooth(params, params_prev, f_smooth) do
           %{
             mean: smooth(params.mean, params_prev.mean, f_smooth),
             std: smooth(params.std, params_prev.std, f_smooth)
           }
         end
 
-        @impl true
         def terminate?([entry | _], _opts), do: entry.params.std < 0.001
 
-        @impl true
         def params_to_instance(%{mean: mean}), do: mean
 
         defp sample_mean(sample, n), do: Enum.sum(sample) / n
@@ -57,99 +54,113 @@ defmodule CEM do
         defp smooth(x, x_prev, f), do: f * x + (1 - f) * x_prev
       end
 
+  Now build the struct:
+
+      problem =
+        CEM.new(
+          init: &MyProblem.init/1,
+          draw: &MyProblem.draw/1,
+          score: &MyProblem.score/1,
+          update: &MyProblem.update/1,
+          smooth: &MyProblem.smooth/3,
+          terminate?: &MyProblem.terminate?/2,
+          params_to_instance: &MyProblem.params_to_instance/1
+        )
+
   ## Search
 
-  Once the problem is defined, execute the search with `CEM.search/2`:
+  Once the problem struct is defined, execute the search with `CEM.search/2`:
 
-      CEM.search(MyProblem, opts)
+      CEM.search(problem, opts)
 
-  where `opts` is a keyword list of options.
+  where `opts` is a keyword list of options. For details, see the documentation
+  for `CEM.search/2`.
   """
 
   alias CEM.Log
-  alias CEM.Options
+  alias CEM.Problem
   alias CEM.Sample
+  alias CEM.SearchOptions
   alias CEM.Update
 
-  @typedoc "map of options used internally"
-  @type opts :: map()
+  @search_options_schema [
+    n_sample: [
+      type: :non_neg_integer,
+      default: 100,
+      doc: "The size of the sample generated before selecting the elite set."
+    ],
+    f_elite: [
+      type: {:custom, CEM.SearchOptions, :validate_range, [0, 1]},
+      default: 0.1,
+      doc: "The fraction between 0 and 1 of the sample size used to select the elite set."
+    ],
+    f_smooth: [
+      type: {:custom, CEM.SearchOptions, :validate_range, [0, 1]},
+      default: 0.9,
+      doc: "A parameter between 0 and 1 used to smooth the distribution parameters."
+    ],
+    mode: [
+      type: {:in, [:min, :max]},
+      default: :max,
+      doc: "The optimization mode, either `:min` (minimization) or `:max` (maximization)."
+    ],
+    n_step_max: [
+      type: :non_neg_integer,
+      default: 100,
+      doc:
+        "The number of parameter update steps at which the search is terminated. " <>
+          "Use this as a fail-safe to prevent infinite recursion."
+    ]
+  ]
 
-  @typedoc "parameters of the the probability distribution used to generate instances"
-  @type params :: any()
+  @typedoc """
+  Map of options used internally.
+  """
+  @type opts() :: map()
 
-  @typedoc "a canidate solution instance"
-  @type instance :: any()
+  @typedoc """
+  Parameters of the the probability distribution used to generate candidate
+  solutions.
+  """
+  @type params() :: any()
 
-  @typedoc "value of the instance objective function used to evaluate instances"
-  @type score :: float()
-
-  @typedoc "iteration count for a single CEM solver"
-  @type step :: non_neg_integer()
+  @typedoc """
+  Iteration count for the CEM search.
+  """
+  @type step() :: non_neg_integer()
 
   @doc """
-  Initialize the parameters of the probability distribution used to generate
-  instances.
+  Create a new `CEM.Problem` struct from a keyword list of required functions.
+
+  The required functions are:
+
+  #{NimbleOptions.docs(Problem.schema())}
   """
-  @callback init_params(opts()) :: params()
+  @spec new(keyword()) :: Problem.t()
+  def new(funcs), do: Problem.new(funcs)
 
   @doc """
-  Draw a random instance from the probability distribution with the given
-  parameters.
+  Replace a required function in the `CEM.Problem` struct.
   """
-  @callback draw_instance(params()) :: instance()
-
-  @doc """
-  Score an instance with a floating point number.
-  """
-  @callback score_instance(instance()) :: score()
-
-  @doc """
-  Update the parameters of the probability distribution using a sample of
-  instances.
-  """
-  @callback update_params([instance()]) :: params()
-
-  @doc """
-  Smooth the parameters of the probability distribution by linearly
-  interpolating between the most recent sample-based update and the parameters
-  from the previous optimization iteration.
-  """
-  @callback smooth_params(params_new :: params(), params_prev :: params(), float()) :: params()
-
-  @doc """
-  Decide if the search should be terminated based on the log so far.
-  """
-  @callback terminate?(Log.t(), opts()) :: boolean()
-
-  @doc """
-  Given final parameters of the instance-generating probability distribution,
-  return the corresponding most likely solution instance.
-  """
-  @callback params_to_instance(params()) :: instance()
-
-  defmacro __using__(_opts) do
-    quote location: :keep do
-      @behaviour CEM
-    end
-  end
+  @spec replace(Problem.t(), atom(), fun()) :: Problem.t()
+  def replace(%Problem{} = problem, fun_name, fun), do: Problem.replace(problem, fun_name, fun)
 
   @doc """
   Search for the optimal solution instance.
 
-  Given a problem module and optional parameters, execute CEM optimization
-  and return the optimal solution instance and its score, corresponding
-  parameters of the probabiity distribution, and a log of optimization
-  progress.
+  Given a `CEM` struct and optional parameters, return the optimal solution
+  instance and its score, the corresponding parameters of the probabiity
+  distribution, and a log of optimization progress.
 
   ## Options
 
-  #{NimbleOptions.docs(CEM.Options.schema())}
+  #{NimbleOptions.docs(@search_options_schema)}
   """
-  @spec search(problem_module :: module(), opts :: keyword()) :: map()
-  def search(problem_module, opts \\ []) do
-    opts = Options.validate_and_augment(opts)
-    loop_fns = init_loop_fns(problem_module, opts)
-    loop(problem_module.init_params(opts), 1, Log.new(), loop_fns)
+  @spec search(Problem.t(), opts :: keyword()) :: map()
+  def search(%Problem{} = problem, opts \\ []) do
+    opts = SearchOptions.validate_and_augment(opts, @search_options_schema)
+    loop_fns = init_loop_fns(problem, opts)
+    loop(problem.init.(opts), 1, Log.new(), loop_fns)
   end
 
   # The main search loop that refines the parameters of the instance-generating
@@ -167,7 +178,7 @@ defmodule CEM do
         step: step,
         params: params_elite,
         score: score_elite,
-        solution: loop_fns.params_to_instance_fn.(params),
+        solution: loop_fns.params_to_instance_fn.(params_elite),
         log: log
       }
     else
@@ -176,27 +187,21 @@ defmodule CEM do
   end
 
   # Initialize the functions needed in the search loop
-  @spec init_loop_fns(module(), opts()) :: map()
-  defp init_loop_fns(problem_module, opts) do
+  @spec init_loop_fns(Problem.t(), opts()) :: map()
+  defp init_loop_fns(problem, opts) do
     generate_fn =
       fn params ->
         Sample.generate_elite_sample_and_score(
           params,
-          &problem_module.draw_instance/1,
-          &problem_module.score_instance/1,
+          problem.draw,
+          problem.score,
           opts
         )
       end
 
     update_fn =
       fn params, sample ->
-        Update.update_and_smooth_params(
-          params,
-          sample,
-          &problem_module.update_params/1,
-          &problem_module.smooth_params/3,
-          opts
-        )
+        Update.update_and_smooth(params, sample, problem.update, problem.smooth, opts)
       end
 
     terminate_fn = fn
@@ -204,14 +209,14 @@ defmodule CEM do
         false
 
       [%{step: step} | _] = log ->
-        step >= opts.n_step_max or problem_module.terminate?(log, opts)
+        step >= opts.n_step_max or problem.terminate?.(log, opts)
     end
 
     %{
       generate_fn: generate_fn,
       update_fn: update_fn,
       terminate_fn: terminate_fn,
-      params_to_instance_fn: &problem_module.params_to_instance/1
+      params_to_instance_fn: problem.params_to_instance
     }
   end
 end

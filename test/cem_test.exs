@@ -1,21 +1,21 @@
-defmodule CEMTestProblem do
-  use CEM
-  def init_params(_), do: 1
-  def draw_instance(_), do: 1
-  def score_instance(_), do: 1
-  def update_params(_), do: 1
-  def smooth_params(_, _, _), do: 1
-  def terminate?(_, _), do: true
-  def params_to_instance(_), do: 1
-end
-
 defmodule CEMTest do
   use ExUnit.Case
   doctest CEM
 
   test "exercise the full pipeline" do
+    prob =
+      CEM.new(
+        init: fn _ -> 1 end,
+        draw: fn _ -> 1 end,
+        score: fn _ -> 1 end,
+        update: fn _ -> 1 end,
+        smooth: fn _, _, _ -> 1 end,
+        terminate?: fn _, _ -> true end,
+        params_to_instance: fn _ -> 1 end
+      )
+
     %{step: step, params: params, solution: solution, score: score, log: log} =
-      CEM.search(CEMTestProblem, n_sample: 10, f_elite: 0.3)
+      CEM.search(prob, n_sample: 10, f_elite: 0.3)
 
     assert {step, params, solution, score} == {1, 1, 1, 1}
     assert length(log) == 1
