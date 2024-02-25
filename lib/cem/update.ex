@@ -6,22 +6,22 @@ defmodule CEM.Update do
   @type opts :: map
   @type params :: any
   @type instance :: any
-  @type update_params_fn :: ([instance()] -> params())
-  @type smooth_params_fn :: (params(), params(), float() -> params())
+  @type update_fn :: ([instance()] -> params())
+  @type smooth_fn :: (params(), params(), float() -> params())
 
   @doc """
   Update the parameters from a sample and then smooth based on the previous parameter values.
   """
-  @spec update_and_smooth_params(
+  @spec update_and_smooth(
           params(),
           [instance()],
-          update_params_fn(),
-          smooth_params_fn(),
+          update_fn(),
+          smooth_fn(),
           opts()
         ) :: params()
-  def update_and_smooth_params(params, sample, update_params_fn, smooth_params_fn, opts) do
+  def update_and_smooth(params, sample, update_fn, smooth_fn, opts) do
     sample
-    |> update_params_fn.()
-    |> smooth_params_fn.(params, opts.f_smooth)
+    |> update_fn.()
+    |> smooth_fn.(params, opts.f_smooth)
   end
 end

@@ -2,8 +2,8 @@ defmodule CEM.RankHeap do
   @moduledoc """
   Module that defines a `RankHeap` as an adaptation of `PairingHeap`.
 
-  The rank heap maintains a maximum number of key-value pairs that
-  represents the pairs with the highest or lowest keys in a stream.
+  The rank heap maintains a maximum number of key-value pairs with the highest
+  or lowest keys in a stream.
   """
 
   alias __MODULE__

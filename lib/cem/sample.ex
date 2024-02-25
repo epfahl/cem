@@ -11,32 +11,32 @@ defmodule CEM.Sample do
   @type instance :: any()
   @type score :: float()
   @type step :: non_neg_integer()
-  @type draw_instance_fn :: (params() -> instance())
-  @type score_instance_fn :: (instance() -> score())
+  @type draw_fn :: (params() -> instance())
+  @type score_fn :: (instance() -> score())
 
   @doc """
   Given parameters of the instance-generating probability distribution,
   generate the elite sample of instances and the smallest (maximization
   problem) or largest (minimization problem) score of that sample.
   """
-  @spec generate_elite_sample_and_score(params(), draw_instance_fn(), score_instance_fn(), opts()) ::
+  @spec generate_elite_sample_and_score(params(), draw_fn(), score_fn(), opts()) ::
           {[instance], score}
-  def generate_elite_sample_and_score(params, draw_instance_fn, score_instnace_fn, opts) do
+  def generate_elite_sample_and_score(params, draw_fn, score_instnace_fn, opts) do
     params
-    |> stream_instances_and_scores(draw_instance_fn, score_instnace_fn)
+    |> stream_instances_and_scores(draw_fn, score_instnace_fn)
     |> reduce_to_elite_sample_and_score(opts)
   end
 
   @doc """
   Return a stream of instance-score pairs.
   """
-  @spec stream_instances_and_scores(params(), draw_instance_fn(), score_instance_fn()) ::
+  @spec stream_instances_and_scores(params(), draw_fn(), score_fn()) ::
           Enumerable.t()
-  def stream_instances_and_scores(params, draw_instance_fn, score_instance_fn) do
+  def stream_instances_and_scores(params, draw_fn, score_fn) do
     Stream.repeatedly(fn ->
       fn ->
-        inst = draw_instance_fn.(params)
-        {inst, score_instance_fn.(inst)}
+        inst = draw_fn.(params)
+        {inst, score_fn.(inst)}
       end
     end)
   end
