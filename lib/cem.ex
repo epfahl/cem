@@ -110,6 +110,10 @@ defmodule CEM do
       doc:
         "The number of parameter update steps at which the search is terminated. " <>
           "Use this as a fail-safe to prevent infinite recursion."
+    ],
+    other_opts: [
+      type: :keyword_list,
+      doc: "User-specified options. _Warning: these are not validated._"
     ]
   ]
 
