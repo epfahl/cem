@@ -80,7 +80,7 @@ defmodule CEM do
   alias CEM.Log
   alias CEM.Problem
   alias CEM.Sample
-  alias CEM.SearchOptions
+  alias CEM.SearchValidators
   alias CEM.Update
 
   @search_options_schema [
@@ -90,12 +90,12 @@ defmodule CEM do
       doc: "The size of the sample generated before selecting the elite set."
     ],
     f_elite: [
-      type: {:custom, CEM.SearchOptions, :validate_range, [0, 1]},
+      type: {:custom, SearchValidators, :validate_range, [0, 1]},
       default: 0.1,
       doc: "The fraction between 0 and 1 of the sample size used to select the elite set."
     ],
     f_smooth: [
-      type: {:custom, CEM.SearchOptions, :validate_range, [0, 1]},
+      type: {:custom, SearchValidators, :validate_range, [0, 1]},
       default: 0.9,
       doc: "A parameter between 0 and 1 used to smooth the distribution parameters."
     ],
@@ -158,7 +158,7 @@ defmodule CEM do
   """
   @spec search(Problem.t(), opts :: keyword()) :: map()
   def search(%Problem{} = problem, opts \\ []) do
-    opts = SearchOptions.validate_and_augment(opts, @search_options_schema)
+    opts = validate_and_augment(opts, @search_options_schema)
     loop_fns = init_loop_fns(problem, opts)
     loop(problem.init.(opts), 1, Log.new(), loop_fns)
   end
@@ -218,5 +218,12 @@ defmodule CEM do
       terminate_fn: terminate_fn,
       params_to_instance_fn: problem.params_to_instance
     }
+  end
+
+  # Validate `CEM.search/2` options with `NimbleOptions` and augment with new keywords.
+  @spec validate_and_augment(keyword(), keyword()) :: map()
+  defp validate_and_augment(opts, schema) do
+    opts = opts |> NimbleOptions.validate!(schema) |> Map.new()
+    Map.put(opts, :n_elite, ceil(opts.f_elite * opts.n_sample))
   end
 end
