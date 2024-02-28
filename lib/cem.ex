@@ -73,8 +73,10 @@ defmodule CEM do
 
       CEM.search(problem, opts)
 
-  where `opts` is a keyword list of options. For details, see the documentation
-  for `CEM.search/2`.
+  where `opts` is a keyword list of options (see the documentation for
+  `CEM.search/2`). After the options are validated, `opts` is turned into a
+  map, and any functions passed to `CEM.new/1` that take `opts` as an argument
+  expect a map.
   """
 
   alias CEM.Log
@@ -228,6 +230,9 @@ defmodule CEM do
   @spec validate_and_augment(keyword(), keyword()) :: map()
   defp validate_and_augment(opts, schema) do
     opts = opts |> NimbleOptions.validate!(schema) |> Map.new()
-    Map.put(opts, :n_elite, ceil(opts.f_elite * opts.n_sample))
+
+    opts
+    |> Map.put(:n_elite, ceil(opts.f_elite * opts.n_sample))
+    |> Map.put(:other_opts, Map.new(opts.other_opts))
   end
 end

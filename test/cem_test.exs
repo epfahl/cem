@@ -15,7 +15,7 @@ defmodule CEMTest do
       )
 
     %{step: step, params: params, solution: solution, score: score, log: log} =
-      CEM.search(prob, n_sample: 10, f_elite: 0.3)
+      CEM.search(prob, n_sample: 10, f_elite: 0.3, other_opts: [other: 1])
 
     assert {step, params, solution, score} == {1, 1, 1, 1}
     assert length(log) == 1
