@@ -19,7 +19,7 @@ defmodule CEM do
 
         def init(_opts), do: %{mean: 0, std: 100}
 
-        def draw(%{mean: mean, std: std}), do: mean + std * :rand.normal()
+        def draw(%{mean: mean, std: std}), do: CEM.Random.normal(mean, std)
 
         def score(x), do: :math.exp(-x * x)
 
