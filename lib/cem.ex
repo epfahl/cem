@@ -24,16 +24,14 @@ defmodule CEM do
         def score(x), do: :math.exp(-x * x)
 
         def update(sample) do
-          n = length(sample)
-          mean = sample_mean(sample, n)
-          std = sample_std(sample, n, mean)
+          {mean, std} = CEM.Stats.sample_mean_and_std(sample)
           %{mean: mean, std: std}
         end
 
         def smooth(params, params_prev, f_smooth) do
           %{
-            mean: smooth(params.mean, params_prev.mean, f_smooth),
-            std: smooth(params.std, params_prev.std, f_smooth)
+            mean: interp(params.mean, params_prev.mean, f_smooth),
+            std: interp(params.std, params_prev.std, f_smooth)
           }
         end
 
@@ -41,17 +39,7 @@ defmodule CEM do
 
         def params_to_instance(%{mean: mean}), do: mean
 
-        defp sample_mean(sample, n), do: Enum.sum(sample) / n
-
-        defp sample_std(sample, n, mean) do
-          sample
-          |> Enum.map(&((&1 - mean) * (&1 - mean)))
-          |> Enum.sum()
-          |> Kernel./(n)
-          |> :math.sqrt()
-        end
-
-        defp smooth(x, x_prev, f), do: f * x + (1 - f) * x_prev
+        defp interp(x, x_prev, f), do: f * x + (1 - f) * x_prev
       end
 
   Now build the struct:
