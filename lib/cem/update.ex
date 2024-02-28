@@ -22,6 +22,6 @@ defmodule CEM.Update do
   def update_and_smooth(params, sample, update_fn, smooth_fn, opts) do
     sample
     |> update_fn.()
-    |> smooth_fn.(params, opts.f_smooth)
+    |> smooth_fn.(params, opts.f_interp)
   end
 end
