@@ -16,30 +16,31 @@ defmodule CEM do
   optimization problem:
 
       defmodule MyProblem do
+        alias CEM.Helpers
+        alias CEM.Random
+        alias CEM.Stats
 
         def init(_opts), do: %{mean: 0, std: 100}
 
-        def draw(%{mean: mean, std: std}), do: CEM.Random.normal(mean, std)
+        def draw(%{mean: mean, std: std}), do: Random.normal(mean, std)
 
         def score(x), do: :math.exp(-x * x)
 
         def update(sample) do
-          {mean, std} = CEM.Stats.sample_mean_and_std(sample)
+          {mean, std} = Stats.sample_mean_and_std(sample)
           %{mean: mean, std: std}
         end
 
-        def smooth(params, params_prev, f_smooth) do
+        def smooth(params, params_prev, f_interp) do
           %{
-            mean: interp(params.mean, params_prev.mean, f_smooth),
-            std: interp(params.std, params_prev.std, f_smooth)
+            mean: Helpers.interpolate(params.mean, params_prev.mean, f_interp),
+            std: Helpers.interpolate(params.std, params_prev.std, f_interp)
           }
         end
 
         def terminate?([entry | _], _opts), do: entry.params.std < 0.001
 
         def params_to_instance(%{mean: mean}), do: mean
-
-        defp interp(x, x_prev, f), do: f * x + (1 - f) * x_prev
       end
 
   Now build the struct:
@@ -84,10 +85,11 @@ defmodule CEM do
       default: 0.1,
       doc: "The fraction between 0 and 1 of the sample size used to select the elite set."
     ],
-    f_smooth: [
+    f_interp: [
       type: {:custom, SearchValidators, :validate_range, [0, 1]},
-      default: 0.9,
-      doc: "A parameter between 0 and 1 used to smooth the distribution parameters."
+      default: 0.1,
+      doc:
+        "The fraction between 0 and 1 used to interpolate between the current and previous parameters."
     ],
     mode: [
       type: {:in, [:min, :max]},
