@@ -105,6 +105,7 @@ defmodule CEM do
     ],
     other_opts: [
       type: :keyword_list,
+      default: [],
       doc: "User-specified options. _Warning: these are not validated._"
     ]
   ]
