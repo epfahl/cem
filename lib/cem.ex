@@ -39,8 +39,6 @@ defmodule CEM do
         end
 
         def terminate?([entry | _], _opts), do: entry.params.std < 0.001
-
-        def params_to_instance(%{mean: mean}), do: mean
       end
 
   Now build the struct:
@@ -52,8 +50,7 @@ defmodule CEM do
           score: &MyProblem.score/1,
           update: &MyProblem.update/1,
           smooth: &MyProblem.smooth/3,
-          terminate?: &MyProblem.terminate?/2,
-          params_to_instance: &MyProblem.params_to_instance/1
+          terminate?: &MyProblem.terminate?/2
         )
 
   ## Search
@@ -78,35 +75,47 @@ defmodule CEM do
     n_sample: [
       type: :non_neg_integer,
       default: 100,
-      doc: "The size of the sample generated before selecting the elite set."
+      doc: """
+      The size of the sample generated before selecting the elite set.
+      """
     ],
     f_elite: [
       type: {:custom, SearchValidators, :validate_range, [0, 1]},
       default: 0.1,
-      doc: "The fraction between 0 and 1 of the sample size used to select the elite set."
+      doc: """
+      The fraction between 0 and 1 of the sample size used to select the elite set.
+      """
     ],
     f_interp: [
       type: {:custom, SearchValidators, :validate_range, [0, 1]},
       default: 0.1,
-      doc:
-        "The fraction between 0 and 1 used to interpolate between the current and previous parameters."
+      doc: """
+      The fraction between 0 and 1 used to interpolate between the current and previous parameters.
+      """
     ],
     mode: [
       type: {:in, [:min, :max]},
       default: :max,
-      doc: "The optimization mode, either `:min` (minimization) or `:max` (maximization)."
+      doc: """
+      The optimization mode, either `:min` (minimization) or `:max` (maximization).
+      """
     ],
     n_step_max: [
       type: :non_neg_integer,
       default: 100,
-      doc:
-        "The number of parameter update steps at which the search is terminated. " <>
-          "Use this as a fail-safe to prevent infinite recursion."
+      doc: """
+      The maximum number of CEM steps at which the search is terminated.
+      This is the default termination condition when `terminate?` is not
+      provided by the user in `CEM.new/1`, and it is a fail-safe to prevent
+      infinite recursion.
+      """
     ],
     other_opts: [
       type: :keyword_list,
       default: [],
-      doc: "User-specified options. _Warning: these are not validated._"
+      doc: """
+      User-specified options. _Warning: these options are not validated._
+      """
     ]
   ]
 
@@ -175,7 +184,6 @@ defmodule CEM do
         step: step,
         params: params_elite,
         score: score_elite,
-        solution: loop_fns.params_to_instance_fn.(params_elite),
         log: log
       }
     else
@@ -206,14 +214,19 @@ defmodule CEM do
         false
 
       [%{step: step} | _] = log ->
-        step >= opts.n_step_max or problem.terminate?.(log, opts)
+        terminate? =
+          case problem.terminate? do
+            nil -> fn _, _ -> false end
+            f when is_function(f, 2) -> f
+          end
+
+        step >= opts.n_step_max or terminate?.(log, opts)
     end
 
     %{
       generate_fn: generate_fn,
       update_fn: update_fn,
-      terminate_fn: terminate_fn,
-      params_to_instance_fn: problem.params_to_instance
+      terminate_fn: terminate_fn
     }
   end
 
