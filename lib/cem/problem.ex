@@ -54,10 +54,8 @@ defmodule CEM.Problem do
     """,
     terminate?: """
     Function to decide if the search should be terminated based on the log so far.
-    """,
-    params_to_instance: """
-    Function to convert the parameters of the probability distribution to a
-    candidate solution.
+    If not provided, the search will end when the `n_step_max` is reached (see docs
+    for `CEM.search/2`).
     """
   }
 
@@ -78,9 +76,6 @@ defmodule CEM.Problem do
 
   @typedoc @function_docs.terminate?
   @type terminate?() :: (Log.t(), opts() -> boolean())
-
-  @typedoc @function_docs.params_to_instance
-  @type params_to_instance() :: (params() -> instance())
 
   def schema() do
     [
@@ -111,19 +106,14 @@ defmodule CEM.Problem do
       ],
       terminate?: [
         type: {:fun, 2},
-        required: true,
+        required: false,
         doc: @function_docs.terminate?
-      ],
-      params_to_instance: [
-        type: {:fun, 1},
-        required: true,
-        doc: @function_docs.params_to_instance
       ]
     ]
   end
 
-  @enforce_keys [:init, :draw, :score, :update, :smooth, :terminate?, :params_to_instance]
-  defstruct [:init, :draw, :score, :update, :smooth, :terminate?, :params_to_instance]
+  @enforce_keys [:init, :draw, :score, :update, :smooth, :terminate?]
+  defstruct [:init, :draw, :score, :update, :smooth, :terminate?]
 
   @type t :: %Problem{
           init: init(),
@@ -131,8 +121,7 @@ defmodule CEM.Problem do
           score: score(),
           update: update(),
           smooth: smooth(),
-          terminate?: terminate?(),
-          params_to_instance: params_to_instance()
+          terminate?: terminate?() | nil
         }
 
   @spec new(keyword()) :: t()
