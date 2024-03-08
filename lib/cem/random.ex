@@ -13,7 +13,17 @@ defmodule CEM.Random do
   Generate a uniform variate from `min_value` to `max_value`.
   """
   @spec uniform(number(), number()) :: float()
-  def uniform(min_value, max_value), do: min_value + (max_value - min_value) * :rand.uniform()
+  def uniform(min_value, max_value) when min_value <= max_value do
+    min_value + (max_value - min_value) * :rand.uniform()
+  end
+
+  @doc """
+  Generate a random integer from `min_value` to `max_value` (inclusive).
+  """
+  def uniform_int(min_value, max_value)
+      when is_integer(min_value) and is_integer(max_value) and min_value <= max_value do
+    min_value - 1 + :rand.uniform(max_value - min_value + 1)
+  end
 
   @doc """
   Generate a normal variate with mean `mean` and standard deviation `std`.
