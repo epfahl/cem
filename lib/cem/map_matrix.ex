@@ -57,9 +57,15 @@ defmodule CEM.MapMatrix do
   This is similar to `Nx.gather/2`.
   """
   @spec gather(t(), [{index(), index()}]) :: [number()]
-  def gather(map_matrix, index_pairs) do
-    Enum.map(index_pairs, &get(map_matrix, &1))
+  def gather(%MapMatrix{} = m, index_pairs) do
+    Enum.map(index_pairs, &get(m, &1))
   end
+
+  @doc """
+  Return the shape `{n_row, n_col}` of the `MapMatrix`.
+  """
+  @spec shape(t()) :: shape()
+  def shape(%MapMatrix{shape: shape}), do: shape
 
   @doc """
   Convert the `MapMatrix` to a list of lists of values.
