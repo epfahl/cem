@@ -7,11 +7,11 @@ defmodule CEM.MixProject do
     [
       app: :cem,
       version: @version,
-      elixir: "~> 1.15",
+      elixir: "~> 1.16",
       description: description(),
       package: package(),
       docs: docs(),
-      source_url: "https://github.com/epfahl/pairing_heap",
+      source_url: "https://github.com/epfahl/cem",
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
@@ -19,12 +19,7 @@ defmodule CEM.MixProject do
 
   def application do
     [
-      extra_applications: [
-        :logger,
-        :observer,
-        :wx,
-        :runtime_tools
-      ]
+      extra_applications: [:logger]
     ]
   end
 

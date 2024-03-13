@@ -3,8 +3,8 @@ defmodule CEM do
   The primary interface for defining a CEM optimization problem and executing
   the search.
 
-  ..._summarize the functional flow of CEM optimization_...
-  ..._a mermaid diagram may be helpful_...
+  TODO:
+  - summarize the functional flow of CEM optimization, with supporting diagram
 
   ## Define a problem
 
